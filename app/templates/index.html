@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+    <head>
+        {% block head %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        {% block styles %}
+            <!-- Bootstrap CSS -->
+            {{ bootstrap.load_css() }}
+        {% endblock %}
+
+        <script src="static/jquery-3.7.1.min.js"></script>
+        <script src="static/jquery-ui-1.14.1.min.js"></script>
+
+        <title>PDF Merger</title>
+
+        <style>
+            body {
+                margin: 1em;
+            }
+            #shots {
+                list-style-type: none;
+                margin: 0;
+                padding: 0;
+                width: 80%;                
+            }
+            #shots li {
+                margin: 0 3px 3px; padding: 0.4em;
+                padding-left: 1.5em;
+                float: left;           
+            }
+            .shot {
+                width: 100px;
+                height: 150px;
+            }
+            .removable {
+                width: 100px;
+                height: 150px;
+                top: 0;
+                left: 0;
+            }
+            .removable:hover + .trashcan, .trashcan:hover {
+                display:block;
+            }
+            .trashcan {
+                top: -96px;
+                left: 0px;                
+                width: 32px;
+                height: 32px;
+                display: none;
+                position: relative;
+                margin: auto;
+            }
+            .left-floater {
+                float: left;
+                margin-right: 1em;
+            }
+        </style>
+        {% endblock %}
+    </head>
+
+    <body>
+        {% block content %}
+        {% with messages = get_flashed_messages()%} 
+            {% if messages %} 
+                {% for message in messages %} 
+                <p>{{ message }}</p> 
+                {% endfor %}
+            {% endif %}
+        {% endwith %} 
+
+        <h1>Add pdf file to merge</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data" class="row g-3">
+            <div class="col-auto">
+                <label for="idfile" class="form-label"/><input type="file" name="file" id="idfile" class="form-control" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" value="Upload" class="btn btn-primary mb-3">Upload</button>
+            </div>
+        </form>
+
+        <ul id="shots">
+            {% for shot in shots %}
+            <li id="order_{{ loop.index }}">
+                <div class="shot">
+                    <img src="{{ 'shots/' + shot.image }}" class="removable" alt="{{ '' + shot.image }}"/>
+                    <img src="{{ 'static/trashcan.png' }}" class="trashcan" alt="{{ '' + shot.image }}"/>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <div class="clearfix"></div>
+
+        <form action="/merge" method="get">
+            <button type="submit" value="Merge and download" class="btn btn-primary mb-3 left-floater">Merge and download</button>
+        </form>
+
+        <form action="/cleanup" method="get">
+            <button type="submit" value="Cleanup all" class="btn btn-primary mb-3">Cleanup all</button>
+        </form>
+        {% endblock %}
+
+        {% block scripts %}
+            <!-- Optional JavaScript -->
+            {{ bootstrap.load_js() }}
+
+            <script lang="JavaScript">
+                $(function() {
+                    $("#shots").sortable();
+                    $("#shots").sortable({
+                        stop: function() {
+                            if ($("#shots li").length > 1) {
+                                var order = $("#shots").sortable("serialize", {key:'order[]'});
+                                window.location.replace("reorder/" + order);
+                            }
+                        }
+                    })
+                })
+                $(".trashcan").click(function() {
+                    if(confirm("Really delete " + $(this).attr("alt") + "?")) {
+                        window.location.replace("delete/" + $(this).attr("alt"));
+                    }
+                });
+            </script>
+        {% endblock %}        
+    </body>
+</html>
